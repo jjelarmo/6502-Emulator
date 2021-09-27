@@ -47,6 +47,12 @@ struct CPU{
 
     //OPCODES
     static constexpr BYTE INS_LDA_IM = 0xA9;
+    static constexpr BYTE INS_LDA_ZP = 0xA5;
+
+    void LDASetup(){
+        Z = (A == 0);
+        N = (A & 0b10000000) > 0; 
+    }
 
 
     BYTE Fetch_byte(u32& Cycles, Memory& memory ){
@@ -55,6 +61,13 @@ struct CPU{
         Cycles--;
         return Data;
     }
+
+    BYTE Read_byte(u32& Cycles, Memory& memory, BYTE address){        
+        BYTE Data = memory[address];
+        Cycles--;
+        return Data;
+    }
+
     void Execute(u32 Cycles, Memory& memory){
         while( Cycles >0){
             BYTE Instruction = Fetch_byte(Cycles, memory);
@@ -62,10 +75,15 @@ struct CPU{
                 case INS_LDA_IM:
                 {
                     BYTE Value = Fetch_byte (Cycles, memory);
-                    A = Value;
-                    Z = (A == 0);
-                    N = (A & 0b10000000) > 0;     
+                    A = Value;    
+                    LDASetup();
                 } break;
+                case INS_LDA_ZP:
+                {
+                    BYTE ZPAddress = Read_byte(Cycles, memory, Instruction);
+                    A = Read_byte(Cycles, memory, ZPAddress);
+                    LDASetup();
+                }break;
             }
         }
     }
